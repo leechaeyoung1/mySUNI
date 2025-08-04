@@ -8,3 +8,4 @@ reportlab
 matplotlib
 statsmodels
 python-dotenv
+thefuzz
