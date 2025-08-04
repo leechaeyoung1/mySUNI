@@ -341,9 +341,7 @@ def index():
         energy_trend_gas=energy_trend_gas,
         produced_chart=produced_chart_html,
         defect_bar_chart=defect_chart_html,
-        remark_keyword_chart=remark_keyword_chart_html,
-        keyword_trend_html=keyword_trend_html,
-        keyword_graphs=bool(keyword_trend_html)
+
     )
 
 
@@ -371,6 +369,7 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     app.run(host="0.0.0.0", port=port) 
+
 
 
 
