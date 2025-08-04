@@ -76,58 +76,7 @@ def safe_merge(df1, df2, on, how="left", name=""):
         print(f"❌ 병합 실패 ({name}):", e)
         return df1
 
-def extract_keywords_tfidf(texts, top_k=4):
-    from kiwipiepy import Kiwi
-    from sklearn.feature_extraction.text import TfidfVectorizer
 
-    kiwi = Kiwi()
-    stopwords = {
-        "의", "이", "가", "은", "는", "들", "좀", "잘", "걍", "과", "도", "를", "으로", "에", "하고", "뿐", "등",
-        "있으며", "되어", "수", "있다", "있음", "및", "대한", "때문에", "것", "있고", "있어"
-    }
-
-    def extract_nouns(text):
-        return [
-            word for word, tag, _, _ in kiwi.analyze(text)[0][0]
-            if tag.startswith("NN") and word not in stopwords
-        ]
-
-    print(f"🔎 형태소 분석 중... 총 {len(texts)}개 문장")
-
-    cache = {}
-    noun_texts = []
-    for i, text in enumerate(texts):
-        if i % 500 == 0:
-            print(f"  ✔️ {i}개 완료")
-        text = text.strip()
-        if text in cache:
-            nouns = cache[text]
-        else:
-            try:
-                nouns = extract_nouns(text)
-            except:
-                nouns = []
-            cache[text] = nouns
-        noun_texts.append(" ".join(nouns))
-
-    vectorizer = TfidfVectorizer(max_features=300)
-    X = vectorizer.fit_transform(noun_texts)
-
-    print("🧠 키워드 추출 시작...")
-    keywords_list = []
-    for i, row in enumerate(X):
-        indices = row.nonzero()[1]
-        data = row.data
-        if len(indices) == 0:
-            keywords_list.append("")
-            continue
-        sorted_indices = sorted(zip(indices, data), key=lambda x: x[1], reverse=True)[:top_k]
-        keywords = [vectorizer.get_feature_names_out()[i] for i, _ in sorted_indices]
-        keywords_list.append(", ".join(keywords))
-        if i % 5000 == 0:
-            print(f"🔹 키워드 추출 {i}개 완료")
-
-    return keywords_list
 
 
 def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
@@ -220,3 +169,4 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
     merged.to_csv(BASE / "result.csv", index=False, encoding="utf-8-sig")
 
     return merged
+
