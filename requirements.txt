@@ -9,3 +9,4 @@ matplotlib
 statsmodels
 python-dotenv
 thefuzz
+tqdm
