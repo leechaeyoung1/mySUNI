@@ -236,131 +236,7 @@ def generate_factory_line_bar_charts_plotly(df):
 
     return produced_chart_html, defect_chart_html
 
-def generate_remark_keyword_trend(df):
-    from collections import Counter
-    from plotly.offline import plot
-    import plotly.express as px
-    from kiwipiepy import Kiwi
-    import pandas as pd
 
-    print("🧠 [remark 트렌드] 분석 시작")
-    result = {}
-
-    # 불용어 및 형태소 분석기
-    kiwi = Kiwi()
-    stopwords = {
-        "의", "이", "가", "을", "를", "은", "는", "들", "좀", "잘", "걍", "과", "도",
-        "으로", "에", "하고", "뿐", "등", "있으며", "되어", "수", "있다", "및", "대한",
-        "때문에", "것", "있고", "있어"
-    }
-
-    def extract_nouns(text):
-        candidates = []
-        for word, tag, _, _ in kiwi.analyze(text)[0][0]:
-            if tag.startswith(("NN", "XR", "SL", "SH", "SN")) and word not in stopwords:
-                candidates.append(word)
-        if not candidates and len(text) >= 3:
-            candidates = [text]
-        return candidates
-
-    # 🔍 전처리
-    df = df.dropna(subset=["remark", "equipment_id", "date", "remark_keywords"])
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df[df["remark_keywords"].str.len() < 100]
-
-    # 🔝 상위 장비 5개만
-    top_equips = df["equipment_id"].value_counts().head(5).index
-    df = df[df["equipment_id"].isin(top_equips)]
-    print(f"✔️ 상위 장비 ID: {list(top_equips)}")
-
-    global_start = df["date"].min()
-    global_end = df["date"].max()
-
-    for equip_id in top_equips:
-        print(f"▶️ 장비 {equip_id} 처리 중...")
-        equip_df = df[df["equipment_id"] == equip_id].copy()
-        equip_df = equip_df.head(200)
-        equip_df["date"] = pd.to_datetime(equip_df["date"], errors="coerce").dt.date
-
-        keyword_list = []
-        records = []
-
-        for _, row in equip_df.iterrows():
-            kws = row["remark_keywords"]
-            if isinstance(kws, str):
-                if kws.startswith("[") and kws.endswith("]"):
-                    try:
-                        kws = eval(kws)
-                    except Exception:
-                        continue
-                else:
-                    kws = [k.strip() for k in kws.split(",")]
-            if not isinstance(kws, list):
-                continue
-
-            flat_keywords = []
-            for kw in kws:
-                flat_keywords.extend(extract_nouns(kw))
-
-            for kw in flat_keywords:
-                normalized_date = pd.to_datetime(row["date"]).date()
-                records.append({"date": normalized_date, "keyword": kw})
-                keyword_list.append(kw)
-
-        counter = Counter(keyword_list)
-        top_keywords = [k for k, _ in counter.most_common(5)]
-
-        if not top_keywords:
-            print(f"❌ 장비 {equip_id} → 키워드 없음")
-            continue
-
-        print(f"▶️ 장비 {equip_id} → 상위 키워드: {top_keywords}")
-
-        # ✅ trend_df 처리 시작
-        trend_df = pd.DataFrame(records)
-        trend_df = trend_df[trend_df["keyword"].isin(top_keywords)]
-        trend_df["date"] = pd.to_datetime(trend_df["date"])
-
-        # ✅ 1️⃣ count 계산
-        trend_df = (
-            trend_df.groupby(["date", "keyword"])
-            .size()
-            .reset_index(name="count")
-        )
-
-        # ✅ 2️⃣ 누락 날짜 보강
-        from itertools import product
-        all_dates = pd.date_range(start=global_start, end=global_end)
-        full_index = pd.DataFrame(product(all_dates, top_keywords), columns=["date", "keyword"])
-        trend_df = pd.merge(full_index, trend_df, on=["date", "keyword"], how="left")
-        trend_df["count"] = trend_df["count"].fillna(0).astype(int)
-
-        trend_df = trend_df.sort_values("date")
-
-        print(f"📊 {equip_id} trend_df 미리보기:")
-        print(trend_df.head())
-
-        if trend_df.empty:
-            print(f"❌ 장비 {equip_id} → 시계열 데이터 없음")
-            continue
-
-        max_y = trend_df["count"].max()
-        fig = px.line(
-            trend_df,
-            x="date",
-            y="count",
-            color="keyword",
-            title=f"📊 Keyword Trend - 장비: {equip_id}",
-            markers=True
-        )
-        fig.update_layout(xaxis_tickformat="%Y-%m-%d")
-        fig.update_xaxes(range=[global_start, global_end])
-        fig.update_yaxes(range=[0, max_y + 2])
-
-        result[equip_id] = plot(fig, output_type="div", include_plotlyjs=False)
-
-    print("✅ [remark 트렌드] 전체 완료")
-    return result
 
 def run_analysis(folder_path):
     global processing_done, result_df
@@ -415,8 +291,7 @@ def index():
     energy_trend_gas = ""
     produced_chart_html = ""
     defect_chart_html = ""
-    remark_keyword_chart_html = ""
-    keyword_trend_html = {}
+
 
     if os.path.exists(RESULT_PATH):
         try:
@@ -440,9 +315,7 @@ def index():
             remark_top5 = get_top_remark_issues(df)
             energy_trend_elec, energy_trend_gas = generate_energy_trend_split_charts(df)
             produced_chart_html, defect_chart_html = generate_factory_line_bar_charts_plotly(df)
-            if df is not None and "remark_keywords" in df.columns:
-                keyword_trend_html = generate_remark_keyword_trend(df)
-                print("📊 keyword_trend_html.keys():", keyword_trend_html.keys())
+
 
         except Exception as e:
             print("❌ CSV 로드 또는 그래프 생성 오류:", e)
@@ -498,6 +371,7 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     app.run(host="0.0.0.0", port=port) 
+
 
 
 
