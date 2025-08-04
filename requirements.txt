@@ -1,6 +1,8 @@
 flask
+gunicorn
 pandas
 plotly
 scikit-learn
 fpdf
 reportlab
+matplotlib
