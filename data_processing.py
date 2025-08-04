@@ -152,21 +152,20 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
     tfidf = TfidfVectorizer(max_features=300)
     X = tfidf.fit_transform(merged["remark"].fillna("").astype(str))
 
+    print("✅ 병합 완료, 클러스터링 시작")
+
     if X.shape[0] < 9:
-        raise ValueError("클러스터링 샘플 수 부족")
+        print(f"❌ remark row 수 부족: {X.shape[0]}개 → 클러스터링 생략")
+        merged["remark_cluster"] = -1
+    else:
+        print("✅ 클러스터링 실행 중")
+        kmeans = KMeans(n_clusters=9, random_state=42)
+        merged["remark_cluster"] = kmeans.fit_predict(X)
 
-    kmeans = KMeans(n_clusters=9, random_state=42)
-    merged["remark_cluster"] = kmeans.fit_predict(X)
-
-    # remark_keywords 생성
-    if "remark" in merged.columns:
-        print("🧠 remark_keywords 추출 중...")
-        merged["remark"] = merged["remark"].fillna("")
-        merged["remark_keywords"] = extract_keywords_tfidf(merged["remark"])
-
-    # 저장
-    BASE = base_path
+    print("✅ result.csv 저장 중...")
     merged.to_csv(BASE / "result.csv", index=False, encoding="utf-8-sig")
+    print("✅ result.csv 저장 완료")
 
     return merged
+
 
