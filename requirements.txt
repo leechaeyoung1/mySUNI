@@ -1,0 +1,6 @@
+flask
+pandas
+plotly
+scikit-learn
+fpdf
+reportlab
