@@ -332,7 +332,7 @@
   <div class="top-panel">
     <div class="upload-panel">
       <!-- ✅ 다중 CSV 업로드 폼 -->
-      <form action="/upload" method="post" enctype="multipart/form-data" id="csv-upload-form">
+      <form action="/" method="post" enctype="multipart/form-data" id="csv-upload-form">
         <label for="csvMultiInput" class="upload-box">
           <p>📁 Choose CSV file</p>
           <sapn id="file-names"></span> <!--파일 이름 표시 영역-->
@@ -560,3 +560,4 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
+
