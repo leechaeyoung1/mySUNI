@@ -518,22 +518,7 @@
       </div>
     </div>
 
-    <!-- 📊 Remark Keyword Trend (장비별) -->
-    <div class="chart chart-wide">
-      <h3>Remark Keyword Trend (장비별)</h3>
 
-      {% if keyword_trend_html %}
-        <div style="display: flex; flex-wrap: wrap; gap: 40px;">
-          {% for equip_id, plot_div in keyword_trend_html.items() %}
-            <div style="width: 48%;" class="graph-box">
-              <h4>장비 ID: {{ equip_id }}</h4>
-              {{ plot_div | safe }}
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-      {% endif %}
-    </div>
 
 
 
@@ -560,4 +545,5 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
+
 
