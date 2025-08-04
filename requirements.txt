@@ -6,3 +6,4 @@ scikit-learn
 fpdf
 reportlab
 matplotlib
+statsmodels
