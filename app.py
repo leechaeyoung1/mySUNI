@@ -15,6 +15,7 @@ import base64
 from io import BytesIO
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+import threading
 
 
 # Flask 설정
@@ -24,6 +25,9 @@ app.secret_key = 'your-secret-key'
 UPLOAD_FOLDER = "uploads"
 RESULT_PATH = os.path.join(UPLOAD_FOLDER, "result.csv")
 Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
+
+processing_done = False
+result_df = None
 
 # 전처리 함수 임포트
 from data_processing import run_preprocessing
@@ -357,15 +361,47 @@ def generate_remark_keyword_trend(df):
     print("✅ [remark 트렌드] 전체 완료")
     return result
 
+def run_analysis(folder_path):
+    global processing_done, result_df
+    try:
+        df = run_preprocessing(Path(folder_path))  # 폴더 내 모든 csv 전처리
+        df.to_csv(RESULT_PATH, index=False, encoding="utf-8-sig")
+        result_df = df
+        processing_done = True
+        print("✅ 분석 완료")
+    except Exception as e:
+        print("❌ 분석 중 오류:", e)
+        processing_done = False
 
 
 
 
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
 def index():
-    print("✅ index() 진입")
+    global processing_done, result_df
 
+    if request.method == "POST":
+        files = request.files.getlist("files")  # ✅ 다중 파일 받아오기
+
+        # 업로드된 파일 저장
+        for file in files:
+            if file and file.filename.endswith(".csv"):
+                save_path = os.path.join(UPLOAD_FOLDER, file.filename)
+                file.save(save_path)
+                print(f"✔ 저장됨: {file.filename}")
+
+        # 비동기 처리
+        processing_done = False
+        result_df = None
+        thread = threading.Thread(target=run_analysis, args=(UPLOAD_FOLDER,))
+        thread.start()
+
+    # ✅ 결과가 완료되었는지 확인
+    show_result = processing_done and os.path.exists(RESULT_PATH)
+    result_preview = result_df.head(10).to_html(classes="table") if show_result else None
+
+    # 📊 기존 result.csv 로드 및 분석
     df = None
     kpis = {"defect_rate": "-", "production_qty": "-", "energy_usage": "-"}
     production_html = defect_html = energy_html = None
@@ -413,6 +449,8 @@ def index():
 
     return render_template(
         "index.html",
+        show_result=show_result,
+        result_preview=result_preview,
         table=df.head().to_html(index=False) if df is not None else None,
         data=df.head(5).to_csv(index=False) if df is not None else None,
         kpis=kpis,
@@ -434,26 +472,28 @@ def index():
         keyword_graphs=bool(keyword_trend_html)
     )
 
-@app.route("/upload", methods=["POST"])
-def upload():
-    files = request.files.getlist("files")
-    if not files or files[0].filename == "":
-        flash("❌ 파일을 업로드해주세요.")
-        return redirect(url_for("index"))
-    for f in files:
-        if f and f.filename.endswith(".csv"):
-            save_path = os.path.join(UPLOAD_FOLDER, f.filename)
-            f.save(save_path)
-            print(f"✔️ 저장됨: {f.filename}")
-    try:
-        df = run_preprocessing(Path(UPLOAD_FOLDER))
-        df.to_csv(RESULT_PATH, index=False, encoding="utf-8-sig")
-        print("✅ result.csv 저장 완료")
-    except Exception as e:
-        print(f"❌ 전처리 오류: {e}")
-        flash(f"❌ 전처리 중 오류 발생: {str(e)}")
-        return redirect(url_for("index"))
-    return redirect(url_for("index"))
+
+# @app.route("/upload", methods=["POST"])
+# def upload():
+#     files = request.files.getlist("files")
+#     if not files or files[0].filename == "":
+#         flash("❌ 파일을 업로드해주세요.")
+#         return redirect(url_for("index"))
+#     for f in files:
+#         if f and f.filename.endswith(".csv"):
+#             save_path = os.path.join(UPLOAD_FOLDER, f.filename)
+#             f.save(save_path)
+#             print(f"✔️ 저장됨: {f.filename}")
+#     try:
+#         df = run_preprocessing(Path(UPLOAD_FOLDER))
+#         df.to_csv(RESULT_PATH, index=False, encoding="utf-8-sig")
+#         print("✅ result.csv 저장 완료")
+#     except Exception as e:
+#         print(f"❌ 전처리 오류: {e}")
+#         flash(f"❌ 전처리 중 오류 발생: {str(e)}")
+#         return redirect(url_for("index"))
+#     return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
