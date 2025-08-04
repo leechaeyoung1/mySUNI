@@ -268,11 +268,10 @@ def index():
                 file.save(save_path)
                 print(f"✔ 저장됨: {file.filename}")
 
-        # 비동기 처리
+        # ✅ 동기 실행으로 변경
         processing_done = False
         result_df = None
-        thread = threading.Thread(target=run_analysis, args=(UPLOAD_FOLDER,))
-        thread.start()
+        run_analysis(UPLOAD_FOLDER)
 
     # ✅ 결과가 완료되었는지 확인
     show_result = processing_done and os.path.exists(RESULT_PATH)
@@ -369,6 +368,7 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     app.run(host="0.0.0.0", port=port) 
+
 
 
 
