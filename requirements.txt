@@ -10,3 +10,4 @@ statsmodels
 python-dotenv
 thefuzz
 tqdm
+kiwipiepy
