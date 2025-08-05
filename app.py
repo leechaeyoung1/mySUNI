@@ -369,6 +369,9 @@ def index():
     )
 
 
+@app.route("/status")
+def status():
+    return {"done": processing_done is True}
 
 
 
@@ -404,6 +407,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
