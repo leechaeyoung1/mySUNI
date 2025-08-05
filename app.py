@@ -276,24 +276,24 @@ def index():
 
         # 업로드된 파일 저장
         for file in files:
-            if file and file.filename.endswith(".csv"):
+            if file and file.filename.endswith(".csv") and not file.filename.startswith("~$"):
                 save_path = os.path.join(UPLOAD_FOLDER, file.filename)
                 file.save(save_path)
                 print(f"✔ 저장됨: {file.filename}")
 
-        # 동기 전처리 실행
-        processing_done = False
-        result_df = None
-        run_analysis(UPLOAD_FOLDER)
-
-    # ⏳ result.csv가 없으면 → 백그라운드 전처리 + 로딩 화면
-    if not os.path.exists(RESULT_PATH):
+        # ✅ 백그라운드 전처리 시작
         if processing_done is False:
-            print("⚙️ 전처리 시작")
+            print("⚙️ 백그라운드 전처리 시작")
             processing_done = None
             thread = threading.Thread(target=background_preprocessing)
             thread.start()
+
         return render_template("loading.html")
+
+    # ⏳ result.csv 없으면 → 백그라운드 전처리 + 로딩 화면
+    if not os.path.exists(RESULT_PATH):
+        if processing_done is None:
+            return render_template("loading.html")
 
     # 📊 분석 결과 준비
     show_result = processing_done and os.path.exists(RESULT_PATH)
@@ -361,6 +361,7 @@ def index():
 
 
 
+
 # @app.route("/upload", methods=["POST"])
 # def upload():
 #     files = request.files.getlist("files")
@@ -393,6 +394,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
