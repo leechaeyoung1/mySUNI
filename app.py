@@ -41,9 +41,7 @@ def background_preprocessing():
         print("❌ 전처리 실패:", e)
         processing_done = False
 
-@app.route("/", methods=["GET"])
-def index():
-    global processing_done
+
 
 # KPI 계산 함수
 def calculate_kpis(df):
@@ -391,6 +389,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
