@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from pathlib import Path
 import pandas as pd
-from waitress import serve
 import os
 import plotly.express as px
 from plotly.offline import plot
@@ -368,6 +367,7 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
