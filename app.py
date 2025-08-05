@@ -301,16 +301,16 @@ def index():
 
         return render_template("loading.html")
 
-    # ⏳ result.csv 없으면 → 백그라운드 전처리 + 로딩 화면
+    # ⏳ result.csv 없으면 → 대기 페이지로 전환
     if not os.path.exists(RESULT_PATH):
-        if processing_done is None:
-            return render_template("loading.html")
+        print("📭 result.csv 없음 → 대기 페이지로 리디렉션")
+        return render_template("waiting.html")
 
     # ✅ result_df가 None일 경우 강제 로딩
     if result_df is None and os.path.exists(RESULT_PATH):
         result_df = pd.read_csv(RESULT_PATH)
 
-    # ✅ show_result 조건 수정
+    # ✅ show_result 조건
     show_result = (
         processing_done and
         os.path.exists(RESULT_PATH) and
@@ -418,6 +418,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
