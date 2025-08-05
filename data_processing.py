@@ -163,9 +163,10 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
         merged["remark_cluster"] = kmeans.fit_predict(X)
 
     print("✅ result.csv 저장 중...")
-    merged.to_csv(BASE / "result.csv", index=False, encoding="utf-8-sig")
+    merged.to_csv(base_path / "result.csv", index=False, encoding="utf-8-sig")
     print("✅ result.csv 저장 완료")
 
     return merged
+
 
 
