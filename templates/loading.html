@@ -2,15 +2,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>분석 중...</title>
-    <meta http-equiv="refresh" content="5">  <!-- 5초마다 자동 새로고침 -->
-    <style>
-        body { font-family: Arial; text-align: center; padding: 50px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>🔄 전처리 중...</title>
+  <script>
+    async function checkStatus() {
+      try {
+        const res = await fetch("/status");
+        const data = await res.json();
+        if (data.done) {
+          window.location.href = "/";
+        } else {
+          setTimeout(checkStatus, 2000);  // 2초 간격 체크
+        }
+      } catch (e) {
+        console.error("상태 확인 실패", e);
+        setTimeout(checkStatus, 3000);  // 오류 시 재시도
+      }
+    }
+    window.onload = checkStatus;
+  </script>
 </head>
 <body>
-    <h2>📊 전처리 및 분석 중입니다...</h2>
-    <p>잠시만 기다려 주세요. 완료되면 자동으로 결과가 표시됩니다.</p>
+  <h2>⏳ 데이터를 처리 중입니다. 잠시만 기다려 주세요...</h2>
 </body>
 </html>
