@@ -6,10 +6,23 @@
 <body>
   <h2>⚙️ 분석 중입니다. 잠시만 기다려주세요.</h2>
   <p>result.csv 파일이 아직 생성되지 않았습니다.</p>
+
   <script>
+    // 5초마다 페이지 새로고침 (보조용)
     setTimeout(() => {
       window.location.reload();
-    }, 5000);  // 5초 후 자동 새로고침
+    }, 5000);
+
+    // 2초마다 /status 확인 → 완료되면 / 로 이동
+    setInterval(() => {
+      fetch("/status")
+        .then(response => response.json())
+        .then(data => {
+          if (data.done) {
+            window.location.href = "/";
+          }
+        });
+    }, 2000);
   </script>
 </body>
 </html>
