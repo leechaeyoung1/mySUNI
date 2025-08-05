@@ -40,12 +40,20 @@ from collections import Counter
 
 # 🔁 백그라운드 전처리 함수 정의
 def background_preprocessing():
-    global processing_done
+    global processing_done, result_df
+
     try:
-        run_preprocessing(Path(UPLOAD_FOLDER))
+        # 예시: 병합, 분석 등 전처리 수행
+        result_df = run_preprocessing(UPLOAD_FOLDER)
+
+        # ✅ 절대 경로로 저장
+        result_df.to_csv(RESULT_PATH, index=False)
+        print(f"✅ result.csv 저장 완료 → {RESULT_PATH}")
+
         processing_done = True
+
     except Exception as e:
-        print("❌ 전처리 실패:", e)
+        print(f"❌ 전처리 오류: {e}")
         processing_done = False
 
 
@@ -410,6 +418,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
