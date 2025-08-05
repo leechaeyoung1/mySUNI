@@ -22,6 +22,8 @@ import threading
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
 
+BASE = os.path.dirname(os.path.abspath(__file__))
+
 UPLOAD_FOLDER = "uploads"
 RESULT_PATH = os.path.join(UPLOAD_FOLDER, "result.csv")
 Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
@@ -367,6 +369,7 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
