@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from pathlib import Path
 import pandas as pd
 import os
@@ -376,8 +376,9 @@ def index():
 
 
 @app.route("/status")
-def status():
-    return {"done": processing_done is True}
+def check_status():
+    global processing_done
+    return jsonify({"done": processing_done is True})
 
 
 
@@ -413,6 +414,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
