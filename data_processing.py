@@ -152,18 +152,26 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
             merged[col] = pd.NA
 
     # 클러스터링
-    tfidf = TfidfVectorizer(max_features=300)
-    X = tfidf.fit_transform(merged["remark"].fillna("").astype(str))
-
     print("✅ 병합 완료, 클러스터링 시작")
+    merged["remark"] = merged["remark"].fillna("").astype(str)
 
-    if X.shape[0] < 9:
-        print(f"❌ remark row 수 부족: {X.shape[0]}개 → 클러스터링 생략")
+    # remark 샘플 일부만 사용 (최대 2000개)
+    sampled = merged.sample(n=min(2000, len(merged)), random_state=42)
+
+    tfidf = TfidfVectorizer(max_features=300)
+    X_sampled = tfidf.fit_transform(sampled["remark"])
+
+    if X_sampled.shape[0] < 9:
+        print(f"❌ remark row 수 부족: {X_sampled.shape[0]}개 → 클러스터링 생략")
         merged["remark_cluster"] = -1
     else:
-        print("✅ 클러스터링 실행 중")
-        kmeans = KMeans(n_clusters=9, random_state=42)
-        merged["remark_cluster"] = kmeans.fit_predict(X)
+        print("✅ 클러스터링 실행 중 (샘플 기반 학습)")
+        kmeans = KMeans(n_clusters=5, random_state=42)
+        kmeans.fit(X_sampled)
+
+        # 전체 remark에 대해 클러스터 예측만 수행
+        X_all = tfidf.transform(merged["remark"])
+        merged["remark_cluster"] = kmeans.predict(X_all)
 
     # 절대 경로로 result.csv 저장
     result_path = base_path / "result.csv"
@@ -171,6 +179,7 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
     merged.to_csv(result_path, index=False, encoding="utf-8-sig")
     print(f"✅ result.csv 저장 완료 → {result_path}")
     return merged
+
 
 
 
