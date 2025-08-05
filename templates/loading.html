@@ -1,28 +1,15 @@
-<!-- templates/loading.html -->
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>🔄 전처리 중...</title>
-  <script>
-    async function checkStatus() {
-      try {
-        const res = await fetch("/status");
-        const data = await res.json();
-        if (data.done) {
-          window.location.href = "/";
-        } else {
-          setTimeout(checkStatus, 2000);  // 2초 간격 체크
-        }
-      } catch (e) {
-        console.error("상태 확인 실패", e);
-        setTimeout(checkStatus, 3000);  // 오류 시 재시도
-      }
-    }
-    window.onload = checkStatus;
-  </script>
+  <title>분석 대기 중...</title>
 </head>
 <body>
-  <h2>⏳ 데이터를 처리 중입니다. 잠시만 기다려 주세요...</h2>
+  <h2>⚙️ 분석 중입니다. 잠시만 기다려주세요.</h2>
+  <p>result.csv 파일이 아직 생성되지 않았습니다.</p>
+  <script>
+    setTimeout(() => {
+      window.location.reload();
+    }, 5000);  // 5초 후 자동 새로고침
+  </script>
 </body>
 </html>
