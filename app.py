@@ -366,9 +366,18 @@ def index():
 #         return redirect(url_for("index"))
 #     return redirect(url_for("index"))
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    print("❌ 전역 예외 발생:")
+    traceback.print_exc()
+    return "500 Internal Server Error", 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
