@@ -42,13 +42,15 @@ from collections import Counter
 def background_preprocessing():
     global processing_done, result_df
     try:
-        print("⚙️ 전처리 시작")
-        result_df = run_preprocessing(UPLOAD_FOLDER)
+        print("🚀 전처리 시작")
+        result_df = run_preprocessing()  # 또는 run_preprocessing(UPLOAD_FOLDER) 등
+        result_df.to_csv(RESULT_PATH, index=False)
+        print("✅ 전처리 완료 및 저장")
         processing_done = True
-        print("✅ 전처리 완료")
     except Exception as e:
+        print("❌ 전처리 실패:", e)
         processing_done = False
-        print("❌ 전처리 중 오류 발생:", e)
+
 
 
 
@@ -428,6 +430,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
