@@ -31,6 +31,10 @@ Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
 processing_done = False
 result_df = None
 
+# 전처리 함수 임포트
+from data_processing import run_preprocessing
+from collections import Counter
+
 # 🔁 백그라운드 전처리 함수 정의
 def background_preprocessing():
     global processing_done
@@ -389,6 +393,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
