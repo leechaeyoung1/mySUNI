@@ -31,9 +31,19 @@ Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
 processing_done = False
 result_df = None
 
-# 전처리 함수 임포트
-from data_processing import run_preprocessing
-from collections import Counter
+# 🔁 백그라운드 전처리 함수 정의
+def background_preprocessing():
+    global processing_done
+    try:
+        run_preprocessing(Path(UPLOAD_FOLDER))
+        processing_done = True
+    except Exception as e:
+        print("❌ 전처리 실패:", e)
+        processing_done = False
+
+@app.route("/", methods=["GET"])
+def index():
+    global processing_done
 
 # KPI 계산 함수
 def calculate_kpis(df):
@@ -269,57 +279,61 @@ def index():
                 file.save(save_path)
                 print(f"✔ 저장됨: {file.filename}")
 
-        # ✅ 동기 실행으로 변경
+        # 동기 전처리 실행
         processing_done = False
         result_df = None
         run_analysis(UPLOAD_FOLDER)
 
-    # ✅ 결과가 완료되었는지 확인
+    # ⏳ result.csv가 없으면 → 백그라운드 전처리 + 로딩 화면
+    if not os.path.exists(RESULT_PATH):
+        if processing_done is False:
+            print("⚙️ 전처리 시작")
+            processing_done = None
+            thread = threading.Thread(target=background_preprocessing)
+            thread.start()
+        return render_template("loading.html")
+
+    # 📊 분석 결과 준비
     show_result = processing_done and os.path.exists(RESULT_PATH)
     result_preview = result_df.head(10).to_html(classes="table") if show_result else None
 
-    # 📊 기존 result.csv 로드 및 분석
     df = None
     kpis = {"defect_rate": "-", "production_qty": "-", "energy_usage": "-"}
     production_html = defect_html = energy_html = None
     spc_elec_img = spc_gas_img = None
     spc_by_line_html = spc_by_line_gas_html = None
     anova_results = None
-
     remark_top5 = []
     energy_trend_elec = ""
     energy_trend_gas = ""
     produced_chart_html = ""
     defect_chart_html = ""
 
+    try:
+        print("📂 result.csv 존재 확인됨")
+        df = pd.read_csv(RESULT_PATH)
+        print("✅ CSV 로딩 성공")
 
-    if os.path.exists(RESULT_PATH):
-        try:
-            print("📂 result.csv 존재 확인됨")
-            df = pd.read_csv(RESULT_PATH)
-            print("✅ CSV 로딩 성공")
-            kpis = calculate_kpis(df)
+        kpis = calculate_kpis(df)
+        production_html = get_production_trend(df)
+        defect_html = get_defect_rate_distribution(df)
+        energy_html = get_energy_usage_chart(df)
 
-            production_html = get_production_trend(df)
-            defect_html = get_defect_rate_distribution(df)
-            energy_html = get_energy_usage_chart(df)
+        df['date'] = pd.to_datetime(df['date'], errors="coerce")
+        elec_series = df.set_index("date")["electricity_kwh"].dropna()
+        gas_series = df.set_index("date")["gas_nm3"].dropna()
+        spc_elec_img = spc_chart(elec_series, "electricity_kwh")
+        spc_gas_img = spc_chart(gas_series, "gas_nm3")
+        spc_by_line_html = spc_chart_by_line(df, y_col='electricity_kwh')
+        spc_by_line_gas_html = spc_chart_by_line(df, y_col='gas_nm3')
+        anova_results = factory_energy_anova(df)
+        remark_top5 = get_top_remark_issues(df)
+        energy_trend_elec, energy_trend_gas = generate_energy_trend_split_charts(df)
+        produced_chart_html, defect_chart_html = generate_factory_line_bar_charts_plotly(df)
 
-            df['date'] = pd.to_datetime(df['date'], errors="coerce")
-            elec_series = df.set_index("date")["electricity_kwh"].dropna()
-            gas_series = df.set_index("date")["gas_nm3"].dropna()
-            spc_elec_img = spc_chart(elec_series, "electricity_kwh")
-            spc_gas_img = spc_chart(gas_series, "gas_nm3")
-            spc_by_line_html = spc_chart_by_line(df, y_col='electricity_kwh')
-            spc_by_line_gas_html = spc_chart_by_line(df, y_col='gas_nm3')
-            anova_results = factory_energy_anova(df)
-            remark_top5 = get_top_remark_issues(df)
-            energy_trend_elec, energy_trend_gas = generate_energy_trend_split_charts(df)
-            produced_chart_html, defect_chart_html = generate_factory_line_bar_charts_plotly(df)
-
-
-        except Exception as e:
-            print("❌ CSV 로드 또는 그래프 생성 오류:", e)
-            flash("❌ CSV 불러오기 또는 그래프 생성 중 오류 발생")
+    except Exception as e:
+        print("❌ CSV 로드 또는 그래프 생성 오류:", e)
+        flash("❌ CSV 불러오기 또는 그래프 생성 중 오류 발생")
 
     return render_template(
         "index.html",
@@ -340,9 +354,9 @@ def index():
         energy_trend_elec=energy_trend_elec,
         energy_trend_gas=energy_trend_gas,
         produced_chart=produced_chart_html,
-        defect_bar_chart=defect_chart_html,
-
+        defect_bar_chart=defect_chart_html
     )
+
 
 
 # @app.route("/upload", methods=["POST"])
@@ -377,6 +391,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
