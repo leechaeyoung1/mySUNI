@@ -22,12 +22,15 @@ import threading
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-
-UPLOAD_FOLDER = "uploads"
+# 절대 경로 기준 설정
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 RESULT_PATH = os.path.join(UPLOAD_FOLDER, "result.csv")
+
+# 업로드 폴더 생성
 Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
 
+# 전역 상태 변수
 processing_done = False
 result_df = None
 
@@ -407,6 +410,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
