@@ -295,8 +295,17 @@ def index():
         if processing_done is None:
             return render_template("loading.html")
 
-    # 📊 분석 결과 준비
-    show_result = processing_done and os.path.exists(RESULT_PATH)
+    # ✅ result_df가 None일 경우 강제 로딩
+    if result_df is None and os.path.exists(RESULT_PATH):
+        result_df = pd.read_csv(RESULT_PATH)
+
+    # ✅ show_result 조건 수정
+    show_result = (
+        processing_done and
+        os.path.exists(RESULT_PATH) and
+        result_df is not None
+    )
+
     result_preview = result_df.head(10).to_html(classes="table") if show_result else None
 
     df = None
@@ -362,6 +371,7 @@ def index():
 
 
 
+
 # @app.route("/upload", methods=["POST"])
 # def upload():
 #     files = request.files.getlist("files")
@@ -394,6 +404,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
