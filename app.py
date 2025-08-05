@@ -277,10 +277,10 @@ def run_analysis(folder_path):
 def index():
     global processing_done, result_df
 
+    # ✅ 파일 업로드 처리
     if request.method == "POST":
         files = request.files.getlist("files")  # ✅ 다중 파일 받아오기
 
-        # 업로드된 파일 저장
         for file in files:
             if file and file.filename.endswith(".csv") and not file.filename.startswith("~$"):
                 save_path = os.path.join(UPLOAD_FOLDER, file.filename)
@@ -296,16 +296,27 @@ def index():
 
         return render_template("loading.html")
 
-    # ⏳ result.csv 없으면 → 대기 페이지로 전환
-    if not os.path.exists(RESULT_PATH):
+    # ✅ 업로드된 파일이 아예 없으면 → 업로드 폼 보여주기
+    uploaded_files = list(Path(UPLOAD_FOLDER).glob("*.csv"))
+    if not uploaded_files:
+        print("📂 업로드된 CSV 파일 없음 → index.html 렌더링")
+        return render_template("index.html")
+
+    # ✅ result.csv가 없고 아직 전처리 중도 아니면 → 대기
+    if not os.path.exists(RESULT_PATH) and processing_done is not None:
         print("📭 result.csv 없음 → 대기 페이지로 리디렉션")
         return render_template("waiting.html")
 
-    # ✅ result_df가 None일 경우 강제 로딩
+    # ✅ 아직 전처리 중이면 → 대기 유지
+    if processing_done is None:
+        print("⏳ 전처리 진행 중 → waiting 유지")
+        return render_template("waiting.html")
+
+    # ✅ 전처리 완료 시 → result.csv 로딩
     if result_df is None and os.path.exists(RESULT_PATH):
         result_df = pd.read_csv(RESULT_PATH)
 
-    # ✅ show_result 조건
+    # ✅ 전처리 완료 여부 확인
     show_result = (
         processing_done and
         os.path.exists(RESULT_PATH) and
@@ -314,6 +325,7 @@ def index():
 
     result_preview = result_df.head(10).to_html(classes="table") if show_result else None
 
+    # 📊 시각화 및 분석 초기값
     df = None
     kpis = {"defect_rate": "-", "production_qty": "-", "energy_usage": "-"}
     production_html = defect_html = energy_html = None
@@ -352,6 +364,7 @@ def index():
         print("❌ CSV 로드 또는 그래프 생성 오류:", e)
         flash("❌ CSV 불러오기 또는 그래프 생성 중 오류 발생")
 
+    # ✅ 최종 대시보드 렌더링
     return render_template(
         "index.html",
         show_result=show_result,
@@ -373,6 +386,7 @@ def index():
         produced_chart=produced_chart_html,
         defect_bar_chart=defect_chart_html
     )
+
 
 
 @app.route("/status")
@@ -414,6 +428,7 @@ def handle_exception(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render 환경변수 사용
     # app.run(host="0.0.0.0", port=port) 
+
 
 
 
