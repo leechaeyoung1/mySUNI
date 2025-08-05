@@ -84,6 +84,9 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
     if openai_key:
         openai.api_key = openai_key
 
+    # 절대 경로로 보장
+    base_path = Path(base_path).resolve()
+
     # CSV 불러오기
     production      = pd.read_csv(base_path / "production_log.csv")
     product_master  = pd.read_csv(base_path / "product_master.csv")
@@ -162,11 +165,13 @@ def run_preprocessing(base_path: Path, openai_key: str = None) -> pd.DataFrame:
         kmeans = KMeans(n_clusters=9, random_state=42)
         merged["remark_cluster"] = kmeans.fit_predict(X)
 
+    # 절대 경로로 result.csv 저장
+    result_path = base_path / "result.csv"
     print("✅ result.csv 저장 중...")
-    merged.to_csv(base_path / "result.csv", index=False, encoding="utf-8-sig")
-    print("✅ result.csv 저장 완료")
-
+    merged.to_csv(result_path, index=False, encoding="utf-8-sig")
+    print(f"✅ result.csv 저장 완료 → {result_path}")
     return merged
+
 
 
 
